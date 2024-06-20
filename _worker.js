@@ -1,8 +1,8 @@
 let token = ''
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ...args) {
     console.log(`request:`, request)
-    console.log(`env:`, env)
+    console.log(`env:`, env, ...args)
     const url = new URL(request.url)
     let githubRawUrl = 'https://raw.githubusercontent.com'
     const { GH_NAME, GH_REPO, GH_BRANCH, GH_TOKEN, TOKEN } = env || {}
@@ -19,7 +19,7 @@ export default {
       }
       token = GH_TOKEN ? GH_TOKEN : TOKEN || url.searchParams.get('token')
       if (!token)
-        return new Response(`TOKEN不能为空 ${JSON.stringify(env)}`, {
+        return new Response(`TOKEN不能为空`, {
           status: 400
         })
 
@@ -57,16 +57,23 @@ export default {
           : fetch(new Request(URL, request))
       }
       //首页改成一个nginx伪装页
-      return new Response(await nginx(), {
-        headers: {
-          'Content-Type': 'text/html; charset=UTF-8'
+      return new Response(
+        await nginx({
+          request,
+          env,
+          ...args
+        }),
+        {
+          headers: {
+            'Content-Type': 'text/html; charset=UTF-8'
+          }
         }
-      })
+      )
     }
   }
 }
 
-async function nginx() {
+async function nginx(obj) {
   const text = `
 	<!DOCTYPE html>
 	<html>
@@ -91,6 +98,7 @@ async function nginx() {
 	<a href="http://nginx.com/">nginx.com</a>.</p>
 	
 	<p><em>Thank you for using nginx.</em></p>
+  <div>${JSON.stringify(obj)}</div>
 	</body>
 	</html>
 	`
