@@ -1,117 +1,91 @@
-let token = ''
 export default {
-  async fetch(request, env, ...args) {
-    console.log(`request:`, request)
-    console.log(`env:`, env, ...args)
+  async fetch(request) {
     const url = new URL(request.url)
     let githubRawUrl = 'https://raw.githubusercontent.com'
-    const { GH_NAME, GH_REPO, GH_BRANCH, GH_TOKEN, TOKEN } = env || {}
+    const {
+      GH_NAME,
+      GH_REPO,
+      GH_BRANCH,
+      GH_TOKEN,
+      TOKEN,
+      URL302,
+      ERROR,
+      URL: EnvUrl
+    } = env || {}
     if (url.pathname !== '/') {
-      if (new RegExp(githubRawUrl, 'i').test(url.pathname)) {
-        const [q] = url.pathname.split(githubRawUrl)
-        githubRawUrl += q
-      } else {
-        const path = [GH_NAME, GH_REPO, GH_BRANCH].filter(Boolean).join('/')
-        githubRawUrl += path
-      }
-      if (GH_TOKEN) {
-        token = GH_TOKEN
-      }
-      token = GH_TOKEN ? GH_TOKEN : TOKEN || url.searchParams.get('token')
-      if (!token)
-        return new Response(`TOKEN不能为空`, {
-          status: 400
-        })
+      const path = [GH_NAME, GH_REPO, GH_BRANCH].filter(Boolean).join('/')
+      githubRawUrl += `/${path}${url.pathname}`
 
+      const token = url.searchParams.get('token') || TOKEN || GH_TOKEN
+      if (!token) return new Response(`TOKEN不能为空`, { status: 400 })
       // 构建请求头
       const headers = new Headers()
       headers.append('Authorization', `token ${token}`)
-
       // 发起请求
       const response = await fetch(githubRawUrl, { headers })
-
       // 检查请求是否成功 (状态码 200 到 299)
       if (response.ok) {
-        // 读取文件内容
-        const content = await response.text()
-
         // 在这里您可以处理文件内容，例如返回给客户端或进行其他操作
-        return new Response(
-          `${content} 
-        ${githubRawUrl}
-          `,
-          {
-            status: 200,
-            headers: {
-              'Content-Type': 'text/plain; charset=UTF-8'
-            }
+        return new Response(await response.text(), {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/plain; charset=UTF-8'
           }
-        )
+        })
       } else {
-        const errorText = env.ERROR || '无法获取文件，检查路径或TOKEN是否正确。'
         // 如果请求不成功，返回适当的错误响应
         return new Response(
-          `${errorText} 
-          ${githubRawUrl}`,
+          ERROR || '无法获取文件，检查路径或TOKEN是否正确。',
           { status: response.status }
         )
       }
     } else {
-      const envKey = env.URL302 ? 'URL302' : env.URL ? 'URL' : null
+      const envKey = URL302 ? 'URL302' : EnvUrl ? 'URL' : null
       if (envKey) {
-        const URLs = await ADD(env[envKey])
-        const URL = URLs[Math.floor(Math.random() * URLs.length)]
+        const urls = await ADD(env[envKey])
+        const url = urls[Math.floor(Math.random() * urls.length)]
         return envKey === 'URL302'
-          ? Response.redirect(URL, 302)
-          : fetch(new Request(URL, request))
+          ? Response.redirect(url, 302)
+          : fetch(new Request(url, request))
       }
       //首页改成一个nginx伪装页
-      return new Response(
-        await nginx({
-          request,
-          env,
-          ...args,
-          githubRawUrl
-        }),
-        {
-          headers: {
-            'Content-Type': 'text/html; charset=UTF-8'
-          }
+      return new Response(await nginx(), {
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8'
         }
-      )
+      })
     }
   }
 }
 
-async function nginx(obj) {
+async function nginx() {
   const text = `
-	<!DOCTYPE html>
-	<html>
-	<head>
-	<title>Welcome to nginx!</title>
-	<style>
-		body {
-			width: 35em;
-			margin: 0 auto;
-			font-family: Tahoma, Verdana, Arial, sans-serif;
-		}
-	</style>
-	</head>
-	<body>
-	<h1>Welcome to nginx!</h1>
-	<p>If you see this page, the nginx web server is successfully installed and
-	working. Further configuration is required.</p>
-	
-	<p>For online documentation and support please refer to
-	<a href="http://nginx.org/">nginx.org</a>.<br/>
-	Commercial support is available at
-	<a href="http://nginx.com/">nginx.com</a>.</p>
-	
-	<p><em>Thank you for using nginx.</em></p>
-  <div>${JSON.stringify(obj)}</div>
-	</body>
-	</html>
-	`
+	  <!DOCTYPE html>
+	  <html>
+	  <head>
+	  <title>Welcome to nginx!</title>
+	  <style>
+		  body {
+			  width: 35em;
+			  margin: 0 auto;
+			  font-family: Tahoma, Verdana, Arial, sans-serif;
+		  }
+	  </style>
+	  </head>
+	  <body>
+	  <h1>Welcome to nginx!</h1>
+	  <p>If you see this page, the nginx web server is successfully installed and
+	  working. Further configuration is required.</p>
+	  
+	  <p>For online documentation and support please refer to
+	  <a href="http://nginx.org/">nginx.org</a>.<br/>
+	  Commercial support is available at
+	  <a href="http://nginx.com/">nginx.com</a>.</p>
+	  
+	  <p><em>Thank you for using nginx.</em></p>
+	  </body>
+	  </html>
+	  `
   return text
 }
 
