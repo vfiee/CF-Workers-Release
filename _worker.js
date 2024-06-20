@@ -50,7 +50,11 @@ export default {
       } else {
         const errorText = env.ERROR || '无法获取文件，检查路径或TOKEN是否正确。'
         // 如果请求不成功，返回适当的错误响应
-        return new Response(errorText, { status: response.status })
+        return new Response(
+          `${errorText} 
+          ${githubRawUrl}`,
+          { status: response.status }
+        )
       }
     } else {
       const envKey = env.URL302 ? 'URL302' : env.URL ? 'URL' : null
