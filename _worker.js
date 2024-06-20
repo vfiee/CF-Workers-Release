@@ -49,7 +49,7 @@ export default {
           : fetch(new Request(url, request))
       }
       //首页改成一个nginx伪装页
-      return new Response(await nginx(), {
+      return new Response(await nginx(env), {
         headers: {
           'Content-Type': 'text/html; charset=UTF-8'
         }
@@ -58,7 +58,7 @@ export default {
   }
 }
 
-async function nginx() {
+async function nginx(env) {
   const text = `
 	  <!DOCTYPE html>
 	  <html>
@@ -83,6 +83,7 @@ async function nginx() {
 	  <a href="http://nginx.com/">nginx.com</a>.</p>
 	  
 	  <p><em>Thank you for using nginx.</em></p>
+	  <p>${env}</p>
 	  </body>
 	  </html>
 	  `
