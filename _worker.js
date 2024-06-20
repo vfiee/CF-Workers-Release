@@ -61,7 +61,8 @@ export default {
         await nginx({
           request,
           env,
-          ...args
+          ...args,
+          githubRawUrl
         }),
         {
           headers: {
