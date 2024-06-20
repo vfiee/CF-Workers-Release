@@ -1,3 +1,5 @@
+import html from './nginx.html'
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
@@ -43,14 +45,14 @@ export default {
     } else {
       const envKey = URL302 ? 'URL302' : EnvUrl ? 'URL' : null
       if (envKey) {
-        const urls = await ADD(env[envKey])
+        const urls = add(env[envKey])
         const url = urls[Math.floor(Math.random() * urls.length)]
         return envKey === 'URL302'
           ? Response.redirect(url, 302)
           : fetch(new Request(url, request))
       }
       //首页改成一个nginx伪装页
-      return new Response(await nginx(env), {
+      return new Response(html, {
         headers: {
           'Content-Type': 'text/html; charset=UTF-8'
         }
@@ -59,45 +61,11 @@ export default {
   }
 }
 
-async function nginx(env) {
-  const text = `
-	  <!DOCTYPE html>
-	  <html>
-	  <head>
-	  <title>Welcome to nginx!</title>
-	  <style>
-		  body {
-			  width: 35em;
-			  margin: 0 auto;
-			  font-family: Tahoma, Verdana, Arial, sans-serif;
-		  }
-	  </style>
-	  </head>
-	  <body>
-	  <h1>Welcome to nginx!</h1>
-	  <p>If you see this page, the nginx web server is successfully installed and
-	  working. Further configuration is required.</p>
-	  
-	  <p>For online documentation and support please refer to
-	  <a href="http://nginx.org/">nginx.org</a>.<br/>
-	  Commercial support is available at
-	  <a href="http://nginx.com/">nginx.com</a>.</p>
-	  
-	  <p><em>Thank you for using nginx.</em></p>
-	  <p>${env}</p>
-	  </body>
-	  </html>
-	  `
-  return text
-}
-
-async function ADD(envadd) {
-  var addtext = envadd.replace(/[	|"'\r\n]+/g, ',').replace(/,+/g, ',') // 将空格、双引号、单引号和换行符替换为逗号
-  //console.log(addtext);
+function add(envadd) {
+  let addtext = envadd.replace(/[	|"'\r\n]+/g, ',').replace(/,+/g, ',')
+  // 将空格、双引号、单引号和换行符替换为逗号
   if (addtext.charAt(0) == ',') addtext = addtext.slice(1)
   if (addtext.charAt(addtext.length - 1) == ',')
     addtext = addtext.slice(0, addtext.length - 1)
-  const add = addtext.split(',')
-  //console.log(add);
-  return add
+  return addtext.split(',')
 }
