@@ -18,12 +18,14 @@ export default {
         token = GH_TOKEN
       }
       token = GH_TOKEN ? GH_TOKEN : TOKEN || url.searchParams.get('token')
-      const githubToken = token
-      if (!token) return new Response('TOKEN不能为空', { status: 400 })
+      if (!token)
+        return new Response(`TOKEN不能为空 ${JSON.stringify(env)}`, {
+          status: 400
+        })
 
       // 构建请求头
       const headers = new Headers()
-      headers.append('Authorization', `token ${githubToken}`)
+      headers.append('Authorization', `token ${token}`)
 
       // 发起请求
       const response = await fetch(githubRawUrl, { headers })
