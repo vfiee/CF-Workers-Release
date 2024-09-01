@@ -6,7 +6,7 @@ export default {
     const githubRepo = url.searchParams.get('repo') || GH_REPO
     const URL = `https://api.github.com/repos/${githubName}/${githubRepo}/releases/latest`
     const headers = new Headers()
-    headers.append('Authorization', `token ${token}`)
+    headers.append('Authorization', `token ${GH_TOKEN}`)
     const response = await fetch(URL, { headers }).then((res) => res.json())
     const latestJsonUrl = response?.data?.assets?.[0]?.browser_download_url
     if (!response.ok || !latestJsonUrl) {
